@@ -40,13 +40,25 @@ from rclpy.time import Duration, Time
 from sensor_msgs.msg import Imu
 from std_msgs.msg import Float32, Int32MultiArray, UInt32
 
-# Livox (and most rclcpp default publishers) use Reliable; sensor_data (Best Effort) will not match.
-_LIDAR_SUB_QOS = QoSProfile(
+# Livox / MID360 and most ROS 2 LiDAR drivers publish PointCloud2 with
+# Best-Effort sensor-data QoS. A Reliable subscriber will silently fail to
+# match a Best-Effort publisher, so default this subscriber to Best-Effort to
+# match the live sensor. (rosbag2 replay still works because the player
+# negotiates the bag's recorded QoS.) Override via the `cloud_sub_reliability`
+# node parameter if you need Reliable for a specific deployment.
+_LIDAR_SUB_QOS_RELIABLE = QoSProfile(
     depth=50,
     reliability=ReliabilityPolicy.RELIABLE,
     history=HistoryPolicy.KEEP_LAST,
     durability=DurabilityPolicy.VOLATILE,
 )
+_LIDAR_SUB_QOS_BEST_EFFORT = QoSProfile(
+    depth=50,
+    reliability=ReliabilityPolicy.BEST_EFFORT,
+    history=HistoryPolicy.KEEP_LAST,
+    durability=DurabilityPolicy.VOLATILE,
+)
+_LIDAR_SUB_QOS = _LIDAR_SUB_QOS_BEST_EFFORT
 # Match external IMU drivers (Microstrain, etc.): best-effort high rate.
 _IMU_DESKEW_QOS = QoSProfile(
     depth=200,
@@ -481,6 +493,11 @@ class KeyframeMapNode(Node):
         self.declare_parameter('cloud_topic', '/livox/lidar')
         self.declare_parameter('map_cloud_topic', '/keyframe_map')
         self.declare_parameter('keyframe_path_topic', '/keyframe_map/keyframes')
+        # QoS reliability for the LiDAR cloud + odom subscriptions.
+        # 'best_effort' (default) matches live Livox/MID360 drivers; rosbag2
+        # replay still negotiates fine. Set to 'reliable' only for unusual
+        # deployments that publish PointCloud2 with Reliable QoS.
+        self.declare_parameter('cloud_sub_reliability', 'best_effort')
         self.declare_parameter('map_frame', 'map')
         self.declare_parameter('robot_frame', 'base_link')
         self.declare_parameter('keyframe_min_dist_m', 0.45)
@@ -752,12 +769,24 @@ class KeyframeMapNode(Node):
         self._last_imu_recv = None  # rclpy.time.Time (receive time; wall-clock fallback only)
         self._last_imu_msg_stamp = None  # IMU time (offset) for deskew gate vs cloud
 
+        _qos_kind = str(
+            self.get_parameter('cloud_sub_reliability').value
+        ).strip().lower()
+        if _qos_kind in ('reliable', 'rel', 'r'):
+            cloud_sub_qos = _LIDAR_SUB_QOS_RELIABLE
+        else:
+            cloud_sub_qos = _LIDAR_SUB_QOS_BEST_EFFORT
+        self.get_logger().info(
+            f'keyframe_map: cloud subscription QoS = '
+            f'{cloud_sub_qos.reliability.name} (param cloud_sub_reliability="{_qos_kind}")'
+        )
+
         if self._use_lidar_odom_sync:
             sub_cloud = message_filters.Subscriber(
-                self, PointCloud2, self._cloud_topic, qos_profile=_LIDAR_SUB_QOS
+                self, PointCloud2, self._cloud_topic, qos_profile=cloud_sub_qos
             )
             sub_odom = message_filters.Subscriber(
-                self, Odometry, self._lidar_odom_topic, qos_profile=_LIDAR_SUB_QOS
+                self, Odometry, self._lidar_odom_topic, qos_profile=cloud_sub_qos
             )
             self._ts_cloud_odom = message_filters.ApproximateTimeSynchronizer(
                 [sub_cloud, sub_odom],
@@ -770,14 +799,14 @@ class KeyframeMapNode(Node):
                 PointCloud2,
                 self._cloud_topic,
                 self._on_cloud,
-                _LIDAR_SUB_QOS,
+                cloud_sub_qos,
             )
             if self._use_lidar_odom_pose and self._lidar_odom_topic:
                 self.create_subscription(
                     Odometry,
                     self._lidar_odom_topic,
                     self._on_lidar_odom,
-                    _LIDAR_SUB_QOS,
+                    cloud_sub_qos,
                 )
         self._pub_map = self.create_publisher(PointCloud2, self._map_topic, 1)
         self._pub_path = (
