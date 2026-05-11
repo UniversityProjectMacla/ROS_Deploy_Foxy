@@ -164,6 +164,9 @@ def launch_setup(context, *args, **kwargs):
     _lidar_arg = LaunchConfiguration('use_lidar_fusion').perform(context).strip().lower()
     if _lidar_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
         U['use_lidar_fusion'] = _lidar_arg in ('true', '1', 'yes', 'on')
+    _rviz_arg = LaunchConfiguration('use_rviz').perform(context).strip().lower()
+    if _rviz_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
+        U['start_rviz'] = _rviz_arg in ('true', '1', 'yes', 'on')
 
     ust = LaunchConfiguration('use_sim_time').perform(context).strip().lower()
     use_sim_time = ust not in ('false', '0', 'no', 'off')
@@ -729,6 +732,14 @@ def generate_launch_description():
             'use_lidar_fusion',
             default_value='',
             description='Override slam_bringup use_lidar_fusion (true|false). Empty = use YAML.',
+        ),
+        DeclareLaunchArgument(
+            'use_rviz',
+            default_value='true',
+            description=(
+                'Start RViz with the SLAM display config. Default true. '
+                'Set use_rviz:=false to run headless.'
+            ),
         ),
         DeclareLaunchArgument(
             'rviz_keyframe_map_size_pixels',
