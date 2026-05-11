@@ -54,7 +54,6 @@
 #include <pcl_conversions/pcl_conversions.h>
 
 #include <tf2/exceptions.h>
-#include <tf2_eigen/tf2_eigen.hpp>
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -64,6 +63,15 @@
 namespace lidar_odometry {
 
 using PointCloudPtr = pcl::PointCloud<pcl::PointXYZ>::Ptr;
+
+// Inline replacement for tf2::transformToEigen (not reliably shipped on Foxy).
+static inline Eigen::Isometry3d transformToEigen(const geometry_msgs::msg::Transform &t) {
+  Eigen::Isometry3d out = Eigen::Isometry3d::Identity();
+  out.translation() << t.translation.x, t.translation.y, t.translation.z;
+  out.linear() = Eigen::Quaterniond(
+      t.rotation.w, t.rotation.x, t.rotation.y, t.rotation.z).toRotationMatrix();
+  return out;
+}
 
 static float yawFrom2DBlock(const Eigen::Matrix4f &T) {
   return std::atan2(T.coeff(1, 0), T.coeff(0, 0));
@@ -405,7 +413,7 @@ class LidarOdometryNode : public rclcpp::Node {
     try {
       const geometry_msgs::msg::TransformStamped ts =
           tf_buffer_->lookupTransform(odom_frame_, base_frame_, t, timeout);
-      const Eigen::Isometry3d Te = tf2::transformToEigen(ts.transform);
+      const Eigen::Isometry3d Te = transformToEigen(ts.transform);
       return planarAffineFromFull(Te.cast<float>());
     } catch (const tf2::TransformException &) {
       try {
@@ -420,7 +428,7 @@ class LidarOdometryNode : public rclcpp::Node {
               odom_frame_.c_str(), base_frame_.c_str());
           logged_tf_latest_fallback_ = true;
         }
-        const Eigen::Isometry3d Te = tf2::transformToEigen(ts.transform);
+        const Eigen::Isometry3d Te = transformToEigen(ts.transform);
         return planarAffineFromFull(Te.cast<float>());
       } catch (const tf2::TransformException &) {
         if (!logged_tf_fallback_) {

@@ -16,8 +16,8 @@ find_package(std_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(tf2_ros REQUIRED)
 find_package(tf2_geometry_msgs REQUIRED)
-find_package(tf2_eigen REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_package(Eigen3 REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common filters registration)
 
 include_directories(${PCL_INCLUDE_DIRS})
@@ -34,10 +34,9 @@ ament_target_dependencies(lidar_odometry_node
   tf2
   tf2_ros
   tf2_geometry_msgs
-  tf2_eigen
   pcl_conversions
 )
-target_link_libraries(lidar_odometry_node ${PCL_LIBRARIES})
+target_link_libraries(lidar_odometry_node ${PCL_LIBRARIES} Eigen3::Eigen)
 target_include_directories(lidar_odometry_node PRIVATE ${PCL_INCLUDE_DIRS})
 
 install(TARGETS lidar_odometry_node DESTINATION lib/${PROJECT_NAME})
