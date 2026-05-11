@@ -1,0 +1,113 @@
+# =============================================================================
+# ekf_node parameters (localisation_ekf) — IMU prediction + optional LiDAR correction
+# =============================================================================
+#
+# Primary fusion stack in this repo: **your** NDT (`lidar_odometry`) + this EKF, OR
+# FAST-LIO via `use_lio:=true` in `ros_project_bringup/launch_slam.launch.py`.
+#
+# LiDAR measurement source — default (NDT path):
+#   Package: lidar_odometry
+#   Node:    lidar_odometry_node
+#   Publishes: /lidar/odom  (nav_msgs/Odometry, odom -> base_link), /lidar/relative_motion
+#
+# LiDAR measurement source — use_lio:=true (see launch file docstring for full detail):
+#   NDT node is NOT started. FAST-LIO publishes /Odometry; lio_odom_relay republishes
+#   /lidar/odom (odom -> base_link). This EKF file does not change: lidar_odom_topic
+#   stays /lidar/odom. No /lidar/relative_motion from NDT. Tune LIO in lio_bringup overlay
+#   + FAST_LIO_ROS2/config/mid360.yaml; consider lidar_fuse_z_from_odom below for 3D LIO.
+#
+# Launch overrides LiDAR R / gate: ekf_lidar_pose_var, ekf_lidar_yaw_var, ekf_lidar_gate_nis
+#
+# Typical bringup (starts driver + NDT + EKF + RViz):
+#   ros2 launch ros_project_bringup launch_slam.launch.py
+#
+# IMU-only (no /lidar/odom for EKF — need BOTH off):
+#   ros2 launch ros_project_bringup launch_slam.launch.py use_lidar_fusion:=false use_lio:=false
+#
+# LIO instead of NDT (EKF still fuses /lidar/odom):
+#   ros2 launch ros_project_bringup launch_slam.launch.py use_lio:=true use_lidar_fusion:=false
+#
+# Livox driver already running elsewhere (same machine):
+#   ros2 launch ros_project_bringup launch_slam.launch.py start_livox_driver:=false
+#
+# Optional altitude-only correction (std_msgs/Float64, data = z); leave "" if unused:
+#   lidar_z_topic: "/lidar/z"
+#
+# State (9): px, py, z, yaw, vx, vy, bax, bay, bgz
+# =============================================================================
+
+ekf_node:
+  ros__parameters:
+    # Overridden by launch_slam (default true). Standalone: false for live robot.
+    use_sim_time: true
+    imu_topic: /livox/imu
+    # Fallback dt if stamps glitch; Livox IMU is often 100–200 Hz — real dt comes from stamps when use_stamp_dt is true
+    nominal_dt: 0.005
+    use_stamp_dt: true
+    # true: use body (ax,ay) in prediction; false: yaw from gyro only, LiDAR corrects motion (see gx5 yaml)
+    predict_use_linear_accel: true
+    # Seconds added to IMU / LiDAR message header stamps (fixed skew vs Livox clock). launch_slam overrides.
+    imu_stamp_offset_sec: 0.0
+    lidar_stamp_offset_sec: 0.0
+    max_odom_tf_publish_rate_hz: 25.0
+
+    odom_frame: odom
+    base_link_frame: base_link
+    publish_tf: true
+    # When IMU header.frame_id != base_link_frame, rotate accel/gyro into base (needs TF)
+    transform_imu_to_base_link: true
+    imu_tf_lookup_timeout_sec: 0.05
+    # Latched std_msgs/String: data is "livox" or "microstrain" (set by launch_slam from slam_bringup.yaml)
+    imu_source_topic: /ekf/imu_source
+    imu_source_id: livox
+
+    # Between NDT scans, IMU coasts: modest px/py/yaw Q; vx/vy not too tight so wrong velocity decays when LiDAR returns.
+    process_noise_diag:
+      - 3.0e-4   # px
+      - 3.0e-4   # py
+      - 1.0e-6   # z (mostly LiDAR-driven)
+      - 2.0e-6   # yaw
+      - 7.0e-3   # vx
+      - 7.0e-3   # vy
+      - 1.0e-8   # bax random walk
+      - 1.0e-8   # bay random walk
+      - 1.0e-10  # bgz random walk
+
+    initial_cov_diag:
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.5
+      - 0.01
+      - 0.01
+      - 1.0e-4
+
+    flat_orientation_variance: 1.0e-4
+
+    publish_topic: /ekf/odom
+    pose_topic: /ekf/pose
+    path_topic: /ekf/path
+
+    # --- LiDAR correction topics (empty string = disabled) ---
+    # Default matches NDT output; launch_slam.launch.py overrides when use_lidar_fusion:=false
+    lidar_odom_topic: "/lidar/odom"
+    lidar_delta_topic: ""
+    lidar_delta_vel_var: 0.22
+    lidar_delta_gate_nis: 200.0
+    lidar_delta_nominal_dt_sec: 0.1
+    lidar_pose_topic: ""
+    lidar_z_topic: ""
+
+    # Accuracy-first (default): low variances => EKF tracks /lidar/odom tightly (can look jumpy).
+    lidar_pose_var: 0.015
+    lidar_yaw_var: 0.008
+    lidar_z_var: 0.05
+    lidar_require_frames: true
+    # Fuse z from /lidar/odom (x,y,z,yaw EKF update). false = planar NDT (z not trusted).
+    # launch_slam sets auto: true when use_lio, false for NDT-only (override with ekf_lidar_fuse_z_from_odom).
+    lidar_fuse_z_from_odom: false
+    # With tight R, raise gate so good LiDAR updates are not dropped as “outliers” too often
+    lidar_gate_nis: 32.0
+    lidar_use_roll_pitch: false

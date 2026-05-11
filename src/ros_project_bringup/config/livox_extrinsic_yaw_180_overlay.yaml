@@ -1,0 +1,4 @@
+# Use when the Livox cloud frame is physically **reversed** vs `base_link` +X (sensor “looks” backward).
+# Package default `slam_bringup.yaml` is 0°; merge this via bringup_config on those robots.
+slam_bringup:
+  livox_extrinsic_yaw_deg: 180.0

@@ -1,0 +1,47 @@
+# FAST-LIO agile timing isolation overlay:
+# - enforce single IMU source from Livox hardware sync domain
+# - start with zero lidar<->imu offset for clean baseline
+/**:
+  ros__parameters:
+    common:
+      imu_topic: "/livox/imu"
+      time_offset_lidar_to_imu: 0.0
+
+    publish_tf: false
+
+    preprocess:
+      blind: 0.55
+      lidar_type: 4
+      scan_line: 4
+      timestamp_unit: 3
+      scan_rate: 10
+
+    mapping:
+      # Increase IMU noise to reduce over-trust during aggressive motion.
+      acc_cov: 0.5
+      gyr_cov: 0.2
+      det_range: 55.0
+      extrinsic_est_en: false
+      b_acc_cov: 0.001
+      b_gyr_cov: 0.001
+      fov_degree: 360.0
+      # Frame-alignment fix: 180 deg yaw rotation about +Z.
+      extrinsic_T: [0.0, 0.0, 0.0]
+      extrinsic_R: [-1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]
+
+    point_filter_num: 2
+    max_iteration: 4
+    filter_size_surf: 0.45
+    filter_size_map: 0.45
+
+    publish:
+      path_en: true
+      effect_map_en: false
+      map_en: true
+      scan_publish_en: true
+      dense_publish_en: false
+      scan_bodyframe_pub_en: true
+
+    pcd_save:
+      pcd_save_en: false
+      interval: -1

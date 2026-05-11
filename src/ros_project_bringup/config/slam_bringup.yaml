@@ -1,0 +1,255 @@
+# =============================================================================
+# SLAM stack bringup (Foxy port) — loaded by:
+#   ros2 launch ros_project_bringup launch_slam.launch.py
+# =============================================================================
+#
+# All sensor data is expected on DDS (e.g. ``ros2 bag play <bag> --clock``).
+# No Livox / Microstrain drivers are started by this workspace — see README.
+#
+# Resolution order: bringup_config arg → ROS_PROJECT_SLAM_CONFIG env → this file.
+# -----------------------------------------------------------------------------
+
+slam_bringup:
+
+  # ===========================================================================
+  # Front-end odometry choice
+  # ===========================================================================
+  # FAST-LIO (default) or PCL NDT. CLI args ``use_lio:=`` / ``use_lidar_fusion:=``
+  # still override. If both true → FAST-LIO wins.
+  use_lio: true
+  use_lidar_fusion: false
+
+  # ===========================================================================
+  # EKF LiDAR fusion
+  # ===========================================================================
+  ekf_lidar_pose_var: 0.022
+  ekf_lidar_yaw_var: 0.018
+  ekf_lidar_gate_nis: 96.0
+  ekf_lidar_delta_topic: ""
+  ekf_lidar_delta_vel_var: 0.22
+  ekf_lidar_delta_gate_nis: 200.0
+  ekf_lidar_delta_nominal_dt_sec: 0.1
+
+  ekf_imu_stamp_offset_sec: 0.0
+  ekf_lidar_stamp_offset_sec: 0.0
+  ekf_lidar_fusion_debug_log: false
+  ekf_lidar_fusion_debug_throttle_sec: 2.0
+  ekf_lidar_soft_fuse_after_gate_reject: true
+  ekf_lidar_fuse_xy_only: true
+  ekf_imu_gyro_z_bias_rad_s: 0.0
+  ekf_imu_auto_gyro_z_bias_enable: false
+  ekf_imu_auto_gyro_z_bias_tune_sec: 5.0
+  ekf_imu_gyro_z_scale: 1.0
+
+  # ===========================================================================
+  # NDT odometry tuning
+  # ===========================================================================
+  lidar_voxel_leaf_size: 0.4
+  lidar_max_fitness_score: 7.0
+  lidar_ndt_max_iterations: 40
+  lidar_ndt_step_size: 0.06
+  lidar_min_points_per_cloud: 300
+  lidar_use_tf_initial_guess: false
+
+  # ===========================================================================
+  # Keyframe map tuning
+  # ===========================================================================
+  keyframe_deskew_imu_stamp_offset_sec: -0.01
+  keyframe_deskew_cloud_stamp_offset_sec: 0.0
+  keyframe_deskew_max_imu_age_sec: 0.08
+  keyframe_deskew_imu_sign: -1.0
+  keyframe_deskew_enable: true
+
+  keyframe_min_dist_m: 0.18
+  keyframe_min_yaw_deg: 4.0
+  keyframe_min_time_sec: 0.6
+  keyframe_voxel_leaf_m: 0.07
+  keyframe_max_map_points: 800000
+  keyframe_max_pts_per_scan: 50000
+
+  pose_graph_weight_odom: 12.0
+  pose_graph_weight_loop: 55.0
+  pose_graph_max_nodes: 500
+  pose_graph_max_loop_edges: 40
+
+  # ===========================================================================
+  # Stack toggles
+  # ===========================================================================
+  start_rviz: true
+  start_keyframe_map: true
+  keyframe_loop_closure_enable: true
+  start_pose_graph: true
+  pose_graph_publish_map_odom_tf: false
+  keyframe_apply_pose_graph_map: true
+
+  # Whether the bringup publishes ``base_link``→``livox_frame`` and
+  # ``base_link``→``imu_link`` static TFs (bag replay typically lacks them).
+  publish_robot_static_tf_when_sensors_off: true
+  publish_livox_imu_sensor_frame_tf: true
+
+  # ===========================================================================
+  # Static TFs (no driver; just frames the bag is calibrated against)
+  # ===========================================================================
+  livox_extrinsic_x: 0.12
+  livox_extrinsic_y: -0.007
+  livox_extrinsic_z: 0.38
+  livox_extrinsic_roll_deg: 0.0
+  livox_extrinsic_pitch_deg: 0.0
+  livox_extrinsic_yaw_deg: 0.0
+  livox_cloud_frame_id: livox_frame
+  livox_imu_child_frame: livox_imu
+  livox_imu_bridge_roll_deg: 0.0
+  livox_imu_bridge_pitch_deg: 0.0
+  livox_imu_bridge_yaw_deg: 0.0
+
+  imu_mount_parent_frame: base_link
+  imu_mount_child_frame: imu_link
+  imu_mount_x: 0.0
+  imu_mount_y: 0.0
+  imu_mount_z: 0.065
+  imu_mount_roll_deg: 0.0
+  imu_mount_pitch_deg: 0.0
+  imu_mount_yaw_deg: 0.0
+
+  # ===========================================================================
+  # Topics
+  # ===========================================================================
+  lidar_cloud_topic: /livox/lidar
+  lidar_odom_raw_topic: /lidar/odom_raw
+  lidar_odom_topic: /lidar/odom
+  lidar_odom_smooth_enable: true
+  lidar_odom_smooth_mode: xyz
+  lidar_odom_smooth_alpha_pose: 0.10
+  lidar_odom_smooth_alpha_twist_linear: 0.12
+  lidar_delta_topic: /lidar/relative_motion
+  lidar_pose_correction_topic: /lidar/pose_correction
+  lidar_odom_frame: odom
+  lidar_base_frame: base_link
+  lidar_ndt_transformation_epsilon: 0.01
+  lidar_ndt_voxel_min_points: 10
+  lidar_ndt_voxel_cov_eig_inflation_ratio: 0.05
+  lidar_publish_tf: false
+  lidar_crop_range_m: 40.0
+  lidar_ndt_resolution: 1.2
+  lidar_ndt_coarse_resolution: 0.0
+  lidar_ndt_fuse_prior_planar_yaw: false
+  lidar_ndt_prior_yaw_blend: 0.85
+  lidar_ndt_corridor_degeneracy_check: true
+  lidar_ndt_corridor_spin_yaw_min_rad: 0.5
+  lidar_ndt_corridor_spin_max_corr_xy_m: 0.1
+  lidar_ndt_fallback_if_planar_correction_below_m: 0.03
+  lidar_ndt_reject_opposite_ekf_step: true
+  lidar_ndt_opposite_motion_min_ekf_step_m: 0.05
+  lidar_ndt_opposite_motion_min_ndt_step_m: 0.05
+  lidar_map_merge_keyframe_min_translation_m: 0.0
+  lidar_map_merge_keyframe_min_yaw_deg: 0.0
+  lidar_registration_mode: scan_to_map
+  lidar_tf_initial_guess_timeout_sec: 0.65
+  lidar_node_start_delay_sec: 1.5
+  lidar_map_merge_voxel_leaf_size: -1.0
+  lidar_map_max_points: 200000
+  lidar_scan_to_map_map_refresh_period: 0
+  lidar_scan_to_map_refresh_keep_scans: 3
+  lidar_scan_to_map_register_sensor_frame: true
+  lidar_log_ndt_relative: true
+  lidar_log_accumulated_pose: true
+  lidar_ndt_gate_until_prior_translation_m: 0.0
+  lidar_ndt_gate_force_after_sec: 10.0
+
+  ekf_lidar_fuse_z_from_odom: auto
+  ekf_lidar_odom_topic: /lidar/odom
+  ekf_lidar_pose_topic: ""
+  ekf_lidar_z_topic: ""
+  ekf_lidar_z_var: 0.05
+  ekf_lidar_require_frames: true
+  ekf_lidar_use_roll_pitch: false
+  # IMU topic the EKF subscribes to (whatever your bag / external driver publishes).
+  ekf_imu_topic: /livox/imu
+  ekf_publish_topic: /ekf/odom
+  ekf_pose_topic: /ekf/pose
+  ekf_path_topic: /ekf/path
+  ekf_odom_frame: odom
+  ekf_base_link_frame: base_link
+  ekf_publish_tf: true
+  ekf_publish_tf_when_lio: true
+  lio_relay_publish_tf: false
+  lio_relay_auto_sync_tf_cloud: true
+  lio_relay_sync_tf_cloud_topic: ""
+  ekf_nominal_dt: 0.025
+  ekf_use_stamp_dt: true
+  ekf_predict_use_linear_accel: null
+  ekf_max_odom_tf_publish_rate_hz: 0.0
+  ekf_imu_source_topic: /ekf/imu_source
+
+  keyframe_cloud_topic: /livox/lidar
+  keyframe_map_cloud_topic: /keyframe_map
+  keyframe_path_topic: /keyframe_map/keyframes
+  keyframe_map_frame: map
+  keyframe_robot_frame: base_link
+  keyframe_publish_path: true
+  keyframe_map_publish_min_interval_sec: 0.45
+  keyframe_tf_allow_latest_fallback: false
+  keyframe_tf_future_extrapolation_use_latest: true
+  keyframe_use_lidar_odom_for_robot_pose: true
+  keyframe_lidar_odom_topic: /lidar/odom
+  keyframe_lidar_odom_max_age_sec: 0.03
+  keyframe_lidar_odom_approximate_sync: true
+  keyframe_lidar_odom_approx_sync_slop_sec: 0.01
+  keyframe_prefilter_min_range_m: 0.4
+  keyframe_prefilter_max_range_m: 12.0
+  keyframe_prefilter_self_radius_m: 0.5
+  keyframe_prefilter_self_bbox_enable: true
+  keyframe_prefilter_self_bbox_min_x: -0.2
+  keyframe_prefilter_self_bbox_max_x: 0.5
+  keyframe_prefilter_self_bbox_min_y: -0.3
+  keyframe_prefilter_self_bbox_max_y: 0.3
+  keyframe_prefilter_self_bbox_min_z: -0.2
+  keyframe_prefilter_self_bbox_max_z: 1.0
+  keyframe_prefilter_intensity_enable: true
+  keyframe_prefilter_min_intensity: 8.0
+  keyframe_prefilter_sor_enable: false
+  keyframe_prefilter_sor_mean_k: 16
+  keyframe_prefilter_sor_stddev_mul: 1.0
+  keyframe_prefilter_sor_max_points: 4500
+  keyframe_deskew_max_gyro_norm_rad_s: 5.0
+  keyframe_tf_lookup_timeout_sec: 0.25
+  keyframe_tf_buffer_cache_sec: 180.0
+  keyframe_deskew_imu_topic: /livox/imu
+  keyframe_deskew_model: rodrigues
+  keyframe_deskew_imu_buffer_max_samples: 512
+  keyframe_deskew_imu_interpolate: true
+  keyframe_deskew_mean_gyro_fallback: true
+  keyframe_deskew_imu_rotate_gyro_to_frame: livox_frame
+  keyframe_deskew_imu_rotation_tf_timeout_sec: 0.08
+  keyframe_deskew_livox_imu_sensor_as_cloud_identity: true
+  keyframe_rotation_adaptive_keyframes: true
+  keyframe_rotation_gyro_thresh_rad_s: 0.45
+  keyframe_rotation_keyframe_scale: 0.7
+  keyframe_reject_unstable_frame_enable: false
+  keyframe_reject_unstable_frame_max_translation_m: 1.0
+  keyframe_reject_unstable_frame_max_yaw_deg: 45.0
+  keyframe_auto_level_enable: true
+  keyframe_auto_level_min_keyframes: 8
+  keyframe_auto_level_min_points: 1500
+  keyframe_auto_level_max_points: 20000
+  keyframe_auto_level_ransac_iters: 140
+  keyframe_auto_level_plane_dist_thresh_m: 0.08
+  keyframe_auto_level_max_tilt_deg: 35.0
+
+  pose_graph_map_odom_tf_period_sec: 0.1
+
+  # ===========================================================================
+  # Config sources
+  # ===========================================================================
+  ekf_params_pkg: localisation_ekf
+  ekf_params_yaml: config/ekf_python.yaml
+  keyframe_params_pkg: keyframe_scan_map
+  keyframe_params_yaml: config/keyframe_map.yaml
+  pose_graph_params_pkg: keyframe_scan_map
+  pose_graph_params_yaml: config/pose_graph.yaml
+  rviz_config_pkg: ros_project_bringup
+  rviz_config_yaml: rviz/slam.rviz
+  fastlio_params_file: config/mid360.yaml
+  lio_overlay_params_file: config/fastlio_mid360_overlay.yaml
+  lio_bag_overlay_params_file: config/fastlio_bag_replay_overlay.yaml
+  lio_auto_tf_bridge: true

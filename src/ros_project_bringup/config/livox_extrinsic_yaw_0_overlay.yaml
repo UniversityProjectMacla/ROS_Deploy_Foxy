@@ -1,0 +1,4 @@
+# Merge overlay for `bringup_config:=...` — explicit Livox yaw 0° (same as package default in slam_bringup.yaml).
+# Base: share/ros_project_bringup/config/slam_bringup.yaml (deep-merge at slam_bringup key level).
+slam_bringup:
+  livox_extrinsic_yaw_deg: 0.0

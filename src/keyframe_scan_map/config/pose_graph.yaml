@@ -1,0 +1,24 @@
+# pose_graph_node — knobs = docs/tuning.md §8; rest below.
+pose_graph_node:
+  ros__parameters:
+    # =========================================================================
+    # KNOBS — only parameters listed in docs/tuning.md §8
+    # =========================================================================
+
+    weight_odom: 12.0
+    weight_loop: 55.0
+    max_graph_nodes: 500
+    max_loop_edges: 40
+
+    # =========================================================================
+    # REST
+    # =========================================================================
+
+    map_odom_tf_period_sec: 0.1
+    keyframes_topic: /keyframe_map/keyframes
+    loop_pair_topic: /keyframe_map/loop_closure_pair
+    output_path_topic: /pose_graph/corrected_keyframes
+    map_frame: map
+    publish_map_odom_tf: false
+    odom_frame: odom
+    odom_stamp_topic: /ekf/odom

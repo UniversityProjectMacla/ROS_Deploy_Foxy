@@ -1,0 +1,229 @@
+Panels:
+  - Class: rviz_common/Displays
+    Name: Displays
+  - Class: rviz_common/Selection
+    Name: Selection
+  - Class: rviz_common/Tool Properties
+    Name: Tool Properties
+  - Class: rviz_common/Views
+    Name: Views
+
+Visualization Manager:
+  Class: ""
+  Displays:
+
+    # -----------------------
+    # Grid
+    # -----------------------
+    - Class: rviz_default_plugins/Grid
+      Name: Grid
+      Enabled: true
+      Reference Frame: map
+      Cell Size: 1
+      Plane Cell Count: 10
+      Color: 160; 160; 164
+
+    # -----------------------
+    # TF
+    # -----------------------
+    - Class: rviz_default_plugins/TF
+      Name: TF
+      Enabled: true
+      Show Axes: true
+      Show Names: false
+
+    # -----------------------
+    # LiDAR (Livox style)
+    # -----------------------
+    - Class: rviz_default_plugins/PointCloud2
+      Name: LiDAR
+      Enabled: true
+      Alpha: 1
+      Style: Flat Squares
+      Size (Pixels): 5
+      Size (m): 0.07000000029802322
+      Position Transformer: XYZ
+      Color Transformer: Intensity
+      Channel Name: intensity
+      Use rainbow: true
+      Invert Rainbow: false
+      Autocompute Intensity Bounds: true
+      Decay Time: 0.4000000059604645
+      Use Fixed Frame: true
+      Selectable: true
+      Topic:
+        Depth: 50
+        Durability Policy: Volatile
+        Filter size: 500
+        History Policy: Keep Last
+        Reliability Policy: Best Effort
+        Value: /livox/lidar
+
+    # -----------------------
+    # LiDAR odometry — axes only (history = use Path if you add a lidar path topic)
+    # -----------------------
+    - Class: rviz_default_plugins/Odometry
+      Name: LiDAR Odom
+      Enabled: false
+      Keep: 1
+      Covariance:
+        Value: false
+      Topic:
+        Depth: 30
+        Durability Policy: Volatile
+        Filter size: 200
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /lidar/odom
+      Shape:
+        Alpha: 1
+        Axes Length: 0.5
+        Axes Radius: 0.05
+        Color: 0; 200; 255
+        Head Length: 0.12
+        Head Radius: 0.06
+        Shaft Length: 0.2
+        Shaft Radius: 0.03
+        Value: Axes
+
+    # -----------------------
+    # EKF Pose — off by default (robot axes come from EKF Odom below)
+    # -----------------------
+    - Class: rviz_default_plugins/Pose
+      Name: EKF Pose (optional)
+      Enabled: false
+      Topic:
+        Depth: 20
+        Durability Policy: Volatile
+        Filter size: 200
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /ekf/pose
+      Shape: Axes
+      Axes Length: 0.6
+      Axes Radius: 0.05
+      Color: 255; 0; 0
+
+    # -----------------------
+    # EKF — robot pose as RGB axes only; journey = EKF Path
+    # -----------------------
+    - Class: rviz_default_plugins/Odometry
+      Name: EKF Odom (robot axes)
+      Enabled: true
+      Keep: 1
+      Covariance:
+        Value: false
+      Topic:
+        Depth: 30
+        Durability Policy: Volatile
+        Filter size: 200
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /ekf/odom
+      Shape:
+        Alpha: 1
+        Axes Length: 0.55
+        Axes Radius: 0.05
+        Color: 255; 85; 0
+        Head Length: 0.12
+        Head Radius: 0.06
+        Shaft Length: 0.2
+        Shaft Radius: 0.03
+        Value: Axes
+
+    # -----------------------
+    # EKF Path (estimated journey in map)
+    # -----------------------
+    - Class: rviz_default_plugins/Path
+      Name: EKF Path (journey)
+      Enabled: true
+      Topic:
+        Depth: 20
+        Durability Policy: Volatile
+        Filter size: 200
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /ekf/path
+      Line Style: Lines
+      Line Width: 0.08
+      Color: 0; 255; 120
+
+    # -----------------------
+    # Keyframe scan map — larger points than live LiDAR; decay 0 (full-map republish + decay = blink).
+    # -----------------------
+    - Class: rviz_default_plugins/PointCloud2
+      Name: Keyframe map
+      Enabled: true
+      Alpha: 1
+      Style: Flat Squares
+      Size (Pixels): 2
+      Size (m): 0.028333334252238274
+      Position Transformer: XYZ
+      Color Transformer: Intensity
+      Channel Name: intensity
+      Color: 255; 255; 255
+      Use rainbow: true
+      Invert Rainbow: false
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Decay Time: 0
+      Use Fixed Frame: true
+      Selectable: true
+      Topic:
+        Depth: 20
+        Durability Policy: Volatile
+        Filter size: 300
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /keyframe_map
+
+    # -----------------------
+    # Keyframe poses (nav_msgs/Path)
+    # -----------------------
+    - Class: rviz_default_plugins/Path
+      Name: Keyframe poses
+      Enabled: true
+      Topic:
+        Depth: 10
+        Durability Policy: Volatile
+        Filter size: 100
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /keyframe_map/keyframes
+      Line Style: Lines
+      Line Width: 0.03
+      Color: 255; 200; 0
+
+  Global Options:
+    Background Color: 48; 48; 48
+    Fixed Frame: map
+    Frame Rate: 30
+
+  Tools:
+    - Class: rviz_default_plugins/Interact
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/Measure
+    - Class: rviz_default_plugins/SetInitialPose
+      Topic: /initialpose
+    - Class: rviz_default_plugins/SetGoal
+      Topic: /move_base_simple/goal
+    - Class: rviz_default_plugins/PublishPoint
+      Topic: /clicked_point
+
+  Views:
+    Current:
+      Class: rviz_default_plugins/Orbit
+      Target Frame: base_link
+      Distance: 10
+      Pitch: 0.5
+      Yaw: 0.5
+
+  Value: true
+
+Window Geometry:
+  Height: 900
+  Width: 1400

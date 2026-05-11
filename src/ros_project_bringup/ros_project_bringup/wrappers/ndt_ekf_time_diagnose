@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+_HERE=$(cd "$(dirname "$0")" && pwd)
+_PREFIX=$(cd "$_HERE/../.." && pwd)
+exec "${_PREFIX}/bin/ndt_ekf_time_diagnose" "$@"

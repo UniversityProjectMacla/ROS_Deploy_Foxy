@@ -1,0 +1,16 @@
+# Laptop / bag replay — merged automatically when ``launch_slam`` runs FAST-LIO with
+# ``launch_sensors:=false`` (see ``slam_bringup.yaml`` ``lio_bag_overlay_params_file``).
+#
+# Merged **last** (after fast_lio mid360.yaml + lio_bringup fastlio_mid360_overlay.yaml):
+#   - PointCloud2 bags often omit Livox ``tag``/``line`` → ``preprocess.lidar_type: 0`` (avoids
+#     ``Failed to find match for field 'line'/'tag'`` when overlay used ``lidar_type: 4`` alone).
+#   - ``publish_tf: true`` so ``body`` exists on ``/tf`` for tools; EKF normally owns
+#     ``odom``→``base_link``. If you set ``lio_relay_publish_tf: true`` and EKF TF off, expect
+#     sparse relay TF (~scan rate) and possible smear — prefer defaults (relay TF false).
+#
+# Robot (``launch_sensors:=true``): this file is **not** loaded; ``fastlio_mid360_overlay.yaml`` stays.
+/**:
+  ros__parameters:
+    publish_tf: true
+    preprocess:
+      lidar_type: 0

@@ -1,0 +1,100 @@
+# keyframe_map_node — knobs = docs/tuning.md §6–7; rest below.
+keyframe_map_node:
+  ros__parameters:
+    # =========================================================================
+    # KNOBS — only parameters listed in docs/tuning.md §6–7
+    # =========================================================================
+
+    deskew_imu_stamp_offset_sec: -0.01
+    deskew_cloud_stamp_offset_sec: 0.0
+    deskew_max_imu_age_sec: 0.08
+    deskew_imu_sign: 1.0
+    deskew_enable: true
+
+    keyframe_min_dist_m: 0.32
+    keyframe_min_yaw_deg: 8.0
+    keyframe_min_time_sec: 0.6
+    voxel_leaf_m: 0.07
+    max_map_points: 2500000
+    max_pts_per_scan: 80000
+
+    # =========================================================================
+    # REST
+    # =========================================================================
+
+    publish_keyframe_path: true
+
+    deskew_imu_topic: /livox/imu
+    deskew_model: rodrigues
+    deskew_imu_buffer_max_samples: 512
+    deskew_imu_interpolate: true
+    deskew_mean_gyro_fallback: true
+    deskew_imu_rotate_gyro_to_frame: livox_frame
+    deskew_imu_rotation_tf_timeout_sec: 0.08
+    deskew_livox_imu_sensor_as_cloud_identity: true
+
+    rotation_adaptive_keyframes: true
+    rotation_gyro_z_thresh_rad_s: 0.45
+    rotation_keyframe_scale: 0.7
+    reject_unstable_frame_enable: false
+    reject_unstable_frame_max_translation_m: 1.0
+    reject_unstable_frame_max_yaw_deg: 45.0
+    auto_level_enable: true
+    auto_level_min_keyframes: 8
+    auto_level_min_points: 1500
+    auto_level_max_points: 20000
+    auto_level_ransac_iters: 140
+    auto_level_plane_dist_thresh_m: 0.08
+    auto_level_max_tilt_deg: 35.0
+
+    loop_closure_enable: true
+    loop_min_index_gap: 28
+    loop_proximity_xy_m: 5.0
+    loop_proximity_yaw_deg: 35.0
+    loop_store_voxel_leaf_m: 0.42
+    loop_max_stored_pts: 4500
+    loop_sample_points: 450
+    loop_point_match_m: 0.38
+    loop_overlap_ratio: 0.32
+    loop_cooldown_sec: 6.0
+
+    apply_pose_graph_corrections: true
+    map_batch_store_voxel_m: 0.32
+    map_publish_min_interval_sec: 0.0
+
+    tf_allow_latest_fallback: false
+    tf_future_extrapolation_use_latest: true
+    tf_lookup_timeout_sec: 0.25
+    tf_buffer_cache_sec: 180.0
+
+    use_lidar_odom_for_robot_pose: true
+    lidar_odom_topic: /lidar/odom
+    # Used when lidar_odom_approximate_sync is false (nearest-neighbor fallback).
+    lidar_odom_max_age_sec: 0.03
+    lidar_odom_approximate_sync: true
+    lidar_odom_approx_sync_slop_sec: 0.01
+    prefilter_min_range_m: 0.4
+    prefilter_max_range_m: 12.0
+    prefilter_self_radius_m: 0.5
+    prefilter_self_bbox_enable: true
+    prefilter_self_bbox_min_x: -0.2
+    prefilter_self_bbox_max_x: 0.5
+    prefilter_self_bbox_min_y: -0.3
+    prefilter_self_bbox_max_y: 0.3
+    prefilter_self_bbox_min_z: -0.2
+    prefilter_self_bbox_max_z: 1.0
+    prefilter_intensity_enable: true
+    prefilter_min_intensity: 8.0
+    prefilter_sor_enable: false
+    prefilter_sor_mean_k: 16
+    prefilter_sor_stddev_mul: 1.0
+    prefilter_sor_max_points: 4500
+    deskew_max_gyro_norm_rad_s: 5.0
+
+    cloud_topic: /livox/lidar
+    map_cloud_topic: /keyframe_map
+    keyframe_path_topic: /keyframe_map/keyframes
+    map_frame: map
+    robot_frame: base_link
+    loop_closure_pair_topic: /keyframe_map/loop_closure_pair
+    pose_graph_corrected_path_topic: /pose_graph/corrected_keyframes

@@ -1,0 +1,228 @@
+# HOW TO USE THIS FILE
+# --------------------
+# For the **Python** `ekf_node` (this repo), use `config/ekf_python.yaml` instead.
+# This file is mainly **robot_localization** `ekf_filter_node` templates + one active IMU-only profile.
+#
+# This file contains one ACTIVE profile (at bottom) plus commented templates.
+#
+# Profiles:
+# 1) IMU-only:
+#    - Keep "two_d_mode: true"
+#    - Keep all LiDAR inputs disabled
+#    - Best for bringup/testing only (drift is expected)
+#
+# 2) IMU + LiDAR pose (x,y,z,yaw):
+#    - Set "two_d_mode: false"
+#    - Enable odom0 and odom0_config for x,y,z,yaw
+#    - Use this when LiDAR odometry is available
+#
+# 3) IMU + LiDAR z-only:
+#    - Set "two_d_mode: false"
+#    - Do NOT enable odom0 pose fusion unless needed
+#    - Feed LiDAR z into your custom node path (ekf_node parameter: lidar_z_topic)
+#
+# 4) IMU + LiDAR pose + extra z-only:
+#    - Set "two_d_mode: false"
+#    - Enable odom0 for x,y,z,yaw
+#    - Also feed an additional z-only odometry stream as odom1
+#    - Use this when you want tighter altitude correction
+#
+# NOTE:
+# This YAML config is for robot_localization-style ekf_filter_node.
+# Your custom Python ekf_node uses different parameters (imu_topic, lidar_*_topic, etc).
+# Keep that distinction in mind when switching stacks.
+
+# ----------------------------------------------------------
+# TEMPLATE A: IMU + LiDAR pose (x,y,z,yaw)  [COMMENTED OUT]
+# ----------------------------------------------------------
+# ekf_filter_node:
+#   ros__parameters:
+#     use_sim_time: true
+#     frequency: 50.0
+#     sensor_timeout: 0.1
+#     two_d_mode: false
+#
+#     map_frame: map
+#     odom_frame: odom
+#     base_link_frame: base_link
+#     world_frame: odom
+#     publish_tf: true
+#     print_diagnostics: true
+#
+#     imu0: /imu/data
+#     imu0_queue_size: 20
+#     imu0_nodelay: true
+#     imu0_config: [
+#       false, false, false,
+#       true,  true,  true,
+#       false, false, false,
+#       true,  true,  true,
+#       true,  true,  true
+#     ]
+#     imu0_differential: false
+#     imu0_relative: false
+#     imu0_remove_gravitational_acceleration: true
+#
+#     odom0: /lidar/odom
+#     odom0_queue_size: 10
+#     odom0_nodelay: true
+#     odom0_config: [
+#       true,  true,  true,
+#       false, false, true,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false
+#     ]
+#     odom0_differential: false
+#     odom0_relative: false
+#     odom0_pose_rejection_threshold: 5.0
+#     odom0_twist_rejection_threshold: 1.0
+#
+# ----------------------------------------------------------
+# TEMPLATE B: IMU + LiDAR z-only  [COMMENTED OUT]
+# ----------------------------------------------------------
+# For robot_localization ekf_filter_node there is no direct "z-only Float64" input.
+# If you only have LiDAR altitude, you can provide it through an odometry source where
+# only z is enabled in odom0_config as shown below.
+#
+# ekf_filter_node:
+#   ros__parameters:
+#     use_sim_time: true
+#     frequency: 50.0
+#     sensor_timeout: 0.1
+#     two_d_mode: false
+#
+#     map_frame: map
+#     odom_frame: odom
+#     base_link_frame: base_link
+#     world_frame: odom
+#     publish_tf: true
+#     print_diagnostics: true
+#
+#     imu0: /imu/data
+#     imu0_queue_size: 20
+#     imu0_nodelay: true
+#     imu0_config: [
+#       false, false, false,
+#       true,  true,  true,
+#       false, false, false,
+#       true,  true,  true,
+#       true,  true,  true
+#     ]
+#     imu0_differential: false
+#     imu0_relative: false
+#     imu0_remove_gravitational_acceleration: true
+#
+#     odom0: /lidar/z_odom
+#     odom0_queue_size: 10
+#     odom0_nodelay: true
+#     odom0_config: [
+#       false, false, true,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false
+#     ]
+#     odom0_differential: false
+#     odom0_relative: false
+#     odom0_pose_rejection_threshold: 5.0
+#     odom0_twist_rejection_threshold: 1.0
+
+# ----------------------------------------------------------
+# TEMPLATE C: IMU + LiDAR pose + extra z-only  [COMMENTED OUT]
+# ----------------------------------------------------------
+# This profile fuses:
+# - odom0: LiDAR pose for x,y,z,yaw
+# - odom1: additional z-only stream for stronger altitude correction
+#
+# ekf_filter_node:
+#   ros__parameters:
+#     use_sim_time: true
+#     frequency: 50.0
+#     sensor_timeout: 0.1
+#     two_d_mode: false
+#
+#     map_frame: map
+#     odom_frame: odom
+#     base_link_frame: base_link
+#     world_frame: odom
+#     publish_tf: true
+#     print_diagnostics: true
+#
+#     imu0: /imu/data
+#     imu0_queue_size: 20
+#     imu0_nodelay: true
+#     imu0_config: [
+#       false, false, false,
+#       true,  true,  true,
+#       false, false, false,
+#       true,  true,  true,
+#       true,  true,  true
+#     ]
+#     imu0_differential: false
+#     imu0_relative: false
+#     imu0_remove_gravitational_acceleration: true
+#
+#     odom0: /lidar/odom
+#     odom0_queue_size: 10
+#     odom0_nodelay: true
+#     odom0_config: [
+#       true,  true,  true,
+#       false, false, true,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false
+#     ]
+#     odom0_differential: false
+#     odom0_relative: false
+#     odom0_pose_rejection_threshold: 5.0
+#     odom0_twist_rejection_threshold: 1.0
+#
+#     odom1: /lidar/z_odom
+#     odom1_queue_size: 10
+#     odom1_nodelay: true
+#     odom1_config: [
+#       false, false, true,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false,
+#       false, false, false
+#     ]
+#     odom1_differential: false
+#     odom1_relative: false
+#     odom1_pose_rejection_threshold: 5.0
+
+# ----------------------------------------------------------
+# ACTIVE PROFILE: IMU-only  [CURRENT DEFAULT]
+# ----------------------------------------------------------
+ekf_filter_node:
+  # IMU-only fusion (no LiDAR). Drift in x/y/yaw is expected.
+  ros__parameters:
+    use_sim_time: true
+    frequency: 50.0
+    sensor_timeout: 0.1
+    two_d_mode: true
+
+    map_frame: map
+    odom_frame: odom
+    base_link_frame: base_link
+    world_frame: odom
+    publish_tf: true
+    print_diagnostics: true
+
+    imu0: /imu/data
+    imu0_queue_size: 20
+    imu0_nodelay: true
+
+    # [x,y,z, roll,pitch,yaw, vx,vy,vz, vroll,vpitch,vyaw, ax,ay,az]
+    imu0_config: [
+      false, false, false,
+      false, false, true,
+      false, false, false,
+      false, false, true,
+      true,  true,  false
+    ]
+
+    imu0_differential: false
+    imu0_relative: false
+    imu0_remove_gravitational_acceleration: true
