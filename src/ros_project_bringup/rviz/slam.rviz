@@ -33,11 +33,13 @@ Visualization Manager:
       Show Names: false
 
     # -----------------------
-    # LiDAR (Livox style)
+    # LiDAR (Livox style). Disabled by default — the Keyframe map below shows
+    # the same data accumulated over time and is far cheaper to render.
+    # Re-enable in the RViz UI if you need the live raw cloud.
     # -----------------------
     - Class: rviz_default_plugins/PointCloud2
       Name: LiDAR
-      Enabled: true
+      Enabled: false
       Alpha: 1
       Style: Flat Squares
       Size (Pixels): 5
@@ -48,13 +50,13 @@ Visualization Manager:
       Use rainbow: true
       Invert Rainbow: false
       Autocompute Intensity Bounds: true
-      Decay Time: 0.4000000059604645
+      Decay Time: 0.1
       Use Fixed Frame: true
       Selectable: true
       Topic:
-        Depth: 50
+        Depth: 10
         Durability Policy: Volatile
-        Filter size: 500
+        Filter size: 10
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /livox/lidar
@@ -173,9 +175,9 @@ Visualization Manager:
       Use Fixed Frame: true
       Selectable: true
       Topic:
-        Depth: 20
+        Depth: 5
         Durability Policy: Volatile
-        Filter size: 300
+        Filter size: 5
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /keyframe_map
@@ -217,7 +219,12 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Target Frame: base_link
+      # Follow the Fixed Frame (= map) instead of base_link. base_link only
+      # appears in the TF tree once the EKF publishes odom->base_link a few
+      # seconds after startup; an Orbit view targeting it before that point
+      # raises tf2::InvalidArgumentException in the render thread, which is
+      # uncaught on Foxy and aborts RViz with SIGABRT.
+      Target Frame: <Fixed Frame>
       Distance: 10
       Pitch: 0.5
       Yaw: 0.5
