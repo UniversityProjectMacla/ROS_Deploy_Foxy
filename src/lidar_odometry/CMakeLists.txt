@@ -39,6 +39,10 @@ ament_target_dependencies(lidar_odometry_node
 target_link_libraries(lidar_odometry_node ${PCL_LIBRARIES} Eigen3::Eigen)
 target_include_directories(lidar_odometry_node PRIVATE ${PCL_INCLUDE_DIRS})
 
+# PCL 1.10 (Foxy) emits its own `pcl::uint8_t is deprecated` warnings from
+# its internal headers. Nothing we can fix in our sources; silence the noise.
+target_compile_options(lidar_odometry_node PRIVATE -Wno-deprecated-declarations)
+
 install(TARGETS lidar_odometry_node DESTINATION lib/${PROJECT_NAME})
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
 

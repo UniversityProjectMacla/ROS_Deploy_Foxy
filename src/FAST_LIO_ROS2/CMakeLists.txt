@@ -99,6 +99,10 @@ target_include_directories(fastlio_mapping PUBLIC
 target_link_libraries(fastlio_mapping ${PCL_LIBRARIES} ${PYTHON_LIBRARIES} Eigen3::Eigen)
 target_include_directories(fastlio_mapping PRIVATE ${PYTHON_INCLUDE_DIRS})
 
+# PCL 1.10 (Foxy) emits its own `pcl::uint8_t is deprecated` warnings from
+# its internal headers. Nothing we can fix in our sources; silence the noise.
+target_compile_options(fastlio_mapping PRIVATE -Wno-deprecated-declarations)
+
 list(APPEND EOL_LIST "foxy" "galactic" "eloquent" "dashing" "crystal")
 
 if($ENV{ROS_DISTRO} IN_LIST EOL_LIST)
