@@ -12,16 +12,20 @@ Differences from the Humble (ROS_Deploy) edition:
 The SLAM algorithm stack itself (FAST-LIO + relay, NDT odometry, EKF,
 keyframe map, pose graph) is the same as the original workspace.
 
-**Run for bag replay (default):**
+**Run live on the robot (default):**
     ros2 launch ros_project_bringup launch_slam.launch.py
-    ros2 bag play <bag> --clock
+    # equivalent to use_lio:=true use_sim_time:=false use_rviz:=true
 
 **Switch FAST-LIO ↔ NDT:**
-    use_lio:=true  use_lidar_fusion:=false   # FAST-LIO (default in YAML)
+    use_lio:=true  use_lidar_fusion:=false   # FAST-LIO (default)
     use_lio:=false use_lidar_fusion:=true    # NDT odometry
 
-**Live wall-clock (no bag):**
-    ros2 launch ros_project_bringup launch_slam.launch.py use_sim_time:=false
+**Bag replay (sim time + /clock):**
+    ros2 launch ros_project_bringup launch_slam.launch.py use_sim_time:=true
+    ros2 bag play <bag> --clock
+
+**Headless (no RViz):**
+    ros2 launch ros_project_bringup launch_slam.launch.py use_rviz:=false
 """
 from __future__ import annotations
 
@@ -709,10 +713,11 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument(
             'use_sim_time',
-            default_value='true',
+            default_value='false',
             description=(
-                'If true (default): all nodes use /clock — use with `ros2 bag play ... --clock`. '
-                'Set false for live wall-clock IMU/LiDAR over DDS.'
+                'If false (default): all nodes use wall-clock — appropriate for live '
+                'IMU/LiDAR over DDS from the robot. Set true (and run `ros2 bag play '
+                '... --clock`) for bag replay.'
             ),
         ),
         DeclareLaunchArgument(
@@ -725,8 +730,11 @@ def generate_launch_description():
         ),
         DeclareLaunchArgument(
             'use_lio',
-            default_value='',
-            description='Override slam_bringup use_lio (true|false). Empty = use YAML.',
+            default_value='true',
+            description=(
+                'Run FAST-LIO as the LiDAR-inertial front-end. Default true. '
+                'Set use_lio:=false (and use_lidar_fusion:=true) to use NDT instead.'
+            ),
         ),
         DeclareLaunchArgument(
             'use_lidar_fusion',
