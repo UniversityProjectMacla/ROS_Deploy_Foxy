@@ -503,9 +503,16 @@ def launch_setup(context, *args, **kwargs):
     if use_lio:
         lio_sim = 'true' if use_sim_time else 'false'
         # Bag replay: merge fastlio_bag_replay_overlay so PointCloud2 lacking Livox tag/line uses lidar_type 0.
+        # CRITICAL: only do this when actually replaying a bag (use_sim_time:=true). On a live MID-360 the
+        # cloud includes `tag`/`line`, lidar_type 4 (MID360 handler) is correct, and forcing it to 0 sends
+        # every point through ``default_handler`` with curvature=0, defeating per-point deskew. Combined
+        # with an IMU mis-config it causes pose divergence -> VoxelGrid integer overflow -> "No Effective
+        # Points!" -> map explosion on the live robot.
         _lio_bag_overlay = str(
             U.get('lio_bag_overlay_params_file', 'config/fastlio_bag_replay_overlay.yaml') or ''
         ).strip()
+        if not use_sim_time:
+            _lio_bag_overlay = ''
         actions.append(
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
@@ -526,6 +533,14 @@ def launch_setup(context, *args, **kwargs):
             )
         )
         if use_lio and bool(U.get('lio_auto_tf_bridge', True)):
+            # ``odom -> camera_init`` keeps FAST-LIO's world tied to the robot ``odom`` frame; pairing
+            # it with an identity ``body -> base_link`` connects the FAST-LIO branch to the EKF /
+            # robot branch so consumers (RViz, message_filters) can resolve ``livox_frame`` against
+            # ``base_link`` through either chain. Without the body bridge the two chains stay
+            # disjoint and the keyframe / RViz TF lookups race against the EKF startup.
+            _bridge_body_to_base = str(
+                U.get('lio_auto_tf_bridge_body_to_base_link', True)
+            ).strip().lower() in ('true', '1', 'yes', 'on')
             actions.append(
                 IncludeLaunchDescription(
                     PythonLaunchDescriptionSource(
@@ -538,7 +553,7 @@ def launch_setup(context, *args, **kwargs):
                     launch_arguments=[
                         ('use_sim_time', lio_sim),
                         ('bridge_odom_to_map', 'false'),
-                        ('bridge_body_to_base_link', 'false'),
+                        ('bridge_body_to_base_link', 'true' if _bridge_body_to_base else 'false'),
                     ],
                 )
             )

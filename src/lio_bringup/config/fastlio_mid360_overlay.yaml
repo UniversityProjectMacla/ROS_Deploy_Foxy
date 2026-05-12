@@ -3,6 +3,14 @@
   ros__parameters:
     publish_tf: false
 
+    common:
+      # Override mid360.yaml default ``/imu/data`` (which is the Microstrain topic name on the
+      # Humble robot setup) so live MID-360 runs subscribe to the Livox-internal IMU. Mismatch
+      # here on Foxy caused FAST-LIO IMU init to wait ~30 s before kicking off with garbage,
+      # which then sent world-frame points off to huge coordinates and triggered the
+      # ``pcl::VoxelGrid::applyFilter`` integer-index overflow / map explosion.
+      imu_topic: "/livox/imu"
+
     preprocess:
       # --- knobs (tuning.md §10) ---
       blind: 0.55

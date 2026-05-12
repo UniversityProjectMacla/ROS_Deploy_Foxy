@@ -232,5 +232,17 @@ Visualization Manager:
   Value: true
 
 Window Geometry:
+  Displays:
+    collapsed: false
   Height: 900
+  Hide Left Dock: false
+  Hide Right Dock: false
+  Selection:
+    collapsed: false
+  Tool Properties:
+    collapsed: false
+  Views:
+    collapsed: false
   Width: 1400
+  X: 100
+  Y: 100
