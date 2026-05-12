@@ -119,6 +119,54 @@ def _static_tf_node(name: str, x: float, y: float, z: float,
     )
 
 
+def _rviz_config_with_image_topic_override(
+    rviz_cfg_path: str,
+    *,
+    image_topic: str,
+) -> str:
+    """Return base rviz path or a temp config whose first ``rviz_default_plugins/Image``
+    display has ``Topic.Value`` set to ``image_topic``. No-op if the topic is empty,
+    the file lacks a Visualization Manager, or there is no Image display."""
+    t_raw = str(image_topic or '').strip()
+    if not t_raw:
+        return rviz_cfg_path
+    with open(rviz_cfg_path, encoding='utf-8') as f:
+        cfg = yaml.safe_load(f) or {}
+    viz = cfg.get('Visualization Manager')
+    if not isinstance(viz, dict):
+        return rviz_cfg_path
+    displays = viz.get('Displays')
+    if not isinstance(displays, list):
+        return rviz_cfg_path
+    changed = False
+    for d in displays:
+        if (
+            isinstance(d, dict)
+            and d.get('Class') == 'rviz_default_plugins/Image'
+        ):
+            topic = d.get('Topic')
+            if isinstance(topic, dict):
+                topic['Value'] = t_raw
+            else:
+                d['Topic'] = {
+                    'Depth': 5,
+                    'Durability Policy': 'Volatile',
+                    'Filter size': 10,
+                    'History Policy': 'Keep Last',
+                    'Reliability Policy': 'Reliable',
+                    'Value': t_raw,
+                }
+            changed = True
+            break
+    if not changed:
+        return rviz_cfg_path
+    fd, tmp_path = tempfile.mkstemp(prefix='perception_rviz_', suffix='.rviz')
+    os.close(fd)
+    with open(tmp_path, 'w', encoding='utf-8') as f:
+        yaml.safe_dump(cfg, f, sort_keys=False)
+    return tmp_path
+
+
 def _rviz_config_with_keyframe_dot_overrides(
     rviz_cfg_path: str,
     *,
@@ -171,6 +219,9 @@ def launch_setup(context, *args, **kwargs):
     _rviz_arg = LaunchConfiguration('use_rviz').perform(context).strip().lower()
     if _rviz_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
         U['start_rviz'] = _rviz_arg in ('true', '1', 'yes', 'on')
+    _vis_perc_arg = LaunchConfiguration('visualise_perception').perform(context).strip().lower()
+    if _vis_perc_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
+        U['visualise_perception'] = _vis_perc_arg in ('true', '1', 'yes', 'on')
 
     ust = LaunchConfiguration('use_sim_time').perform(context).strip().lower()
     use_sim_time = ust not in ('false', '0', 'no', 'off')
@@ -721,6 +772,31 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.append(rviz_node)
 
+    if bool(U.get('visualise_perception', False)):
+        # Second rviz2 dedicated to a single perception debug image. Unique node name
+        # so DDS / ros2 node list does not see two ``/rviz2`` collisions.
+        perc_rviz_cfg = _share_file(
+            U.get('perception_visualisation_rviz_pkg', 'ros_project_bringup'),
+            U.get('perception_visualisation_rviz_yaml', 'rviz/perception_visualisation.rviz'),
+        )
+        perc_topic = str(
+            U.get('perception_visualisation_topic', '/perception/visualisation')
+            or '/perception/visualisation'
+        ).strip()
+        perc_rviz_cfg = _rviz_config_with_image_topic_override(
+            perc_rviz_cfg, image_topic=perc_topic
+        )
+        actions.append(
+            Node(
+                package='rviz2',
+                executable='rviz2',
+                name='rviz2_perception',
+                arguments=['-d', perc_rviz_cfg],
+                output='screen',
+                parameters=[sim_time_param],
+            )
+        )
+
     return actions
 
 
@@ -762,6 +838,16 @@ def generate_launch_description():
             description=(
                 'Start RViz with the SLAM display config. Default true. '
                 'Set use_rviz:=false to run headless.'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'visualise_perception',
+            default_value='',
+            description=(
+                'When true, start a second rviz2 instance displaying the '
+                'perception debug image (default topic /perception/visualisation, '
+                'overridable in slam_bringup.yaml). Empty = use YAML value '
+                '(visualise_perception, default false).'
             ),
         ),
         DeclareLaunchArgument(

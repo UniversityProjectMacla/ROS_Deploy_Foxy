@@ -249,6 +249,19 @@ slam_bringup:
   pose_graph_params_yaml: config/pose_graph.yaml
   rviz_config_pkg: ros_project_bringup
   rviz_config_yaml: rviz/slam.rviz
+
+  # ===========================================================================
+  # Perception visualisation (second RViz window for a debug image stream)
+  # ===========================================================================
+  # When true, launch a second rviz2 process alongside the SLAM RViz that shows
+  # only the perception debug image (e.g. annotated camera view). Layout is
+  # stripped to one Image display with both side docks hidden so the user can
+  # drag/maximise the embedded Image subwindow (or hit F11 to toggle rviz2
+  # fullscreen). Override at launch with ``visualise_perception:=true|false``.
+  visualise_perception: false
+  perception_visualisation_topic: /perception/visualisation
+  perception_visualisation_rviz_pkg: ros_project_bringup
+  perception_visualisation_rviz_yaml: rviz/perception_visualisation.rviz
   fastlio_params_file: config/mid360.yaml
   lio_overlay_params_file: config/fastlio_mid360_overlay.yaml
   lio_bag_overlay_params_file: config/fastlio_bag_replay_overlay.yaml
