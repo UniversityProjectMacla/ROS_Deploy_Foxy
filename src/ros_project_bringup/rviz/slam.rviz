@@ -1,58 +1,85 @@
 Panels:
   - Class: rviz_common/Displays
+    Help Height: 78
     Name: Displays
+    Property Tree Widget:
+      Expanded:
+        - /Global Options1
+        - /Status1
+      Splitter Ratio: 0.5
+    Tree Height: 549
   - Class: rviz_common/Selection
     Name: Selection
   - Class: rviz_common/Tool Properties
+    Expanded:
+      - /2D Goal Pose1
+      - /Publish Point1
     Name: Tool Properties
+    Splitter Ratio: 0.5886790156364441
   - Class: rviz_common/Views
+    Expanded:
+      - /Current View1
     Name: Views
-
+    Splitter Ratio: 0.5
 Visualization Manager:
   Class: ""
   Displays:
-
-    # -----------------------
-    # Grid
-    # -----------------------
-    - Class: rviz_default_plugins/Grid
-      Name: Grid
-      Enabled: true
-      Reference Frame: map
+    - Alpha: 0.5
       Cell Size: 1
-      Plane Cell Count: 10
+      Class: rviz_default_plugins/Grid
       Color: 160; 160; 164
-
-    # -----------------------
-    # TF
-    # -----------------------
-    - Class: rviz_default_plugins/TF
-      Name: TF
       Enabled: true
+      Line Style:
+        Line Width: 0.029999999329447746
+        Value: Lines
+      Name: Grid
+      Normal Cell Count: 0
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Plane: XY
+      Plane Cell Count: 10
+      Reference Frame: <Fixed Frame>
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+      Marker Scale: 1
+      Name: TF
+      Show Arrows: true
       Show Axes: true
       Show Names: false
-
-    # -----------------------
-    # LiDAR (Livox style). Disabled by default — the Keyframe map below shows
-    # the same data accumulated over time and is far cheaper to render.
-    # Re-enable in the RViz UI if you need the live raw cloud.
-    # -----------------------
-    - Class: rviz_default_plugins/PointCloud2
-      Name: LiDAR
-      Enabled: false
-      Alpha: 1
-      Style: Flat Squares
-      Size (Pixels): 5
-      Size (m): 0.07000000029802322
-      Position Transformer: XYZ
-      Color Transformer: Intensity
-      Channel Name: intensity
-      Use rainbow: true
-      Invert Rainbow: false
+      Tree:
+        {}
+      Update Interval: 0
+      Value: true
+    - Alpha: 1
       Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
       Decay Time: 0.1
-      Use Fixed Frame: true
+      Enabled: false
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: LiDAR
+      Position Transformer: XYZ
       Selectable: true
+      Size (Pixels): 3
+      Size (m): 0.05
+      Style: Flat Squares
       Topic:
         Depth: 10
         Durability Policy: Volatile
@@ -60,23 +87,64 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Best Effort
         Value: /livox/lidar
-
-    # -----------------------
-    # LiDAR odometry — axes only (history = use Path if you add a lidar path topic)
-    # -----------------------
-    - Class: rviz_default_plugins/Odometry
-      Name: LiDAR Odom
-      Enabled: false
-      Keep: 1
-      Covariance:
-        Value: false
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: false
+    - Alpha: 1
+      Autocompute Intensity Bounds: true
+      Autocompute Value Bounds:
+        Max Value: 10
+        Min Value: -10
+        Value: true
+      Axis: Z
+      Channel Name: intensity
+      Class: rviz_default_plugins/PointCloud2
+      Color: 255; 255; 255
+      Color Transformer: Intensity
+      Decay Time: 0
+      Enabled: true
+      Invert Rainbow: false
+      Max Color: 255; 255; 255
+      Max Intensity: 4096
+      Min Color: 0; 0; 0
+      Min Intensity: 0
+      Name: Keyframe map
+      Position Transformer: XYZ
+      Selectable: true
+      Size (Pixels): 2
+      Size (m): 0.028333334252238274
+      Style: Flat Squares
       Topic:
-        Depth: 30
+        Depth: 5
         Durability Policy: Volatile
-        Filter size: 200
+        Filter size: 5
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /lidar/odom
+        Value: /keyframe_map
+      Use Fixed Frame: true
+      Use rainbow: true
+      Value: true
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: Axes
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: false
+      Enabled: false
+      Keep: 1
+      Name: LiDAR Odom
+      Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
         Axes Length: 0.5
@@ -87,41 +155,35 @@ Visualization Manager:
         Shaft Length: 0.2
         Shaft Radius: 0.03
         Value: Axes
-
-    # -----------------------
-    # EKF Pose — off by default (robot axes come from EKF Odom below)
-    # -----------------------
-    - Class: rviz_default_plugins/Pose
-      Name: EKF Pose (optional)
-      Enabled: false
-      Topic:
-        Depth: 20
-        Durability Policy: Volatile
-        Filter size: 200
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /ekf/pose
-      Shape: Axes
-      Axes Length: 0.6
-      Axes Radius: 0.05
-      Color: 255; 0; 0
-
-    # -----------------------
-    # EKF — robot pose as RGB axes only; journey = EKF Path
-    # -----------------------
-    - Class: rviz_default_plugins/Odometry
-      Name: EKF Odom (robot axes)
-      Enabled: true
-      Keep: 1
-      Covariance:
-        Value: false
       Topic:
         Depth: 30
         Durability Policy: Volatile
         Filter size: 200
         History Policy: Keep Last
         Reliability Policy: Reliable
-        Value: /ekf/odom
+        Value: /lidar/odom
+      Value: false
+    - Angle Tolerance: 0.10000000149011612
+      Class: rviz_default_plugins/Odometry
+      Covariance:
+        Orientation:
+          Alpha: 0.5
+          Color: 255; 255; 127
+          Color Style: Unique
+          Frame: Local
+          Offset: 1
+          Scale: 1
+          Value: Axes
+        Position:
+          Alpha: 0.30000001192092896
+          Color: 204; 51; 204
+          Scale: 1
+          Value: true
+        Value: false
+      Enabled: true
+      Keep: 1
+      Name: EKF Odom (robot axes)
+      Position Tolerance: 0.10000000149011612
       Shape:
         Alpha: 1
         Axes Length: 0.55
@@ -132,13 +194,34 @@ Visualization Manager:
         Shaft Length: 0.2
         Shaft Radius: 0.03
         Value: Axes
-
-    # -----------------------
-    # EKF Path (estimated journey in map)
-    # -----------------------
-    - Class: rviz_default_plugins/Path
-      Name: EKF Path (journey)
+      Topic:
+        Depth: 30
+        Durability Policy: Volatile
+        Filter size: 200
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /ekf/odom
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 0; 255; 120
       Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
+      Line Style: Lines
+      Line Width: 0.07999999821186066
+      Name: EKF Path (journey)
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 20
         Durability Policy: Volatile
@@ -146,48 +229,27 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /ekf/path
+      Value: true
+    - Alpha: 1
+      Buffer Length: 1
+      Class: rviz_default_plugins/Path
+      Color: 255; 200; 0
+      Enabled: true
+      Head Diameter: 0.30000001192092896
+      Head Length: 0.20000000298023224
+      Length: 0.30000001192092896
       Line Style: Lines
-      Line Width: 0.08
-      Color: 0; 255; 120
-
-    # -----------------------
-    # Keyframe scan map — larger points than live LiDAR; decay 0 (full-map republish + decay = blink).
-    # -----------------------
-    - Class: rviz_default_plugins/PointCloud2
-      Name: Keyframe map
-      Enabled: true
-      Alpha: 1
-      Style: Flat Squares
-      Size (Pixels): 2
-      Size (m): 0.028333334252238274
-      Position Transformer: XYZ
-      Color Transformer: Intensity
-      Channel Name: intensity
-      Color: 255; 255; 255
-      Use rainbow: true
-      Invert Rainbow: false
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Decay Time: 0
-      Use Fixed Frame: true
-      Selectable: true
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 5
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /keyframe_map
-
-    # -----------------------
-    # Keyframe poses (nav_msgs/Path)
-    # -----------------------
-    - Class: rviz_default_plugins/Path
+      Line Width: 0.029999999329447746
       Name: Keyframe poses
-      Enabled: true
+      Offset:
+        X: 0
+        Y: 0
+        Z: 0
+      Pose Color: 255; 85; 255
+      Pose Style: None
+      Radius: 0.029999999329447746
+      Shaft Diameter: 0.10000000149011612
+      Shaft Length: 0.10000000149011612
       Topic:
         Depth: 10
         Durability Policy: Volatile
@@ -195,42 +257,73 @@ Visualization Manager:
         History Policy: Keep Last
         Reliability Policy: Reliable
         Value: /keyframe_map/keyframes
-      Line Style: Lines
-      Line Width: 0.03
-      Color: 255; 200; 0
-
+      Value: true
+  Enabled: true
   Global Options:
     Background Color: 48; 48; 48
     Fixed Frame: map
     Frame Rate: 30
-
+  Name: root
   Tools:
     - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
     - Class: rviz_default_plugins/MoveCamera
     - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
     - Class: rviz_default_plugins/Measure
+      Line color: 128; 128; 0
     - Class: rviz_default_plugins/SetInitialPose
-      Topic: /initialpose
+      Covariance x: 0.25
+      Covariance y: 0.25
+      Covariance yaw: 0.06853891909122467
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /initialpose
     - Class: rviz_default_plugins/SetGoal
-      Topic: /move_base_simple/goal
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /goal_pose
     - Class: rviz_default_plugins/PublishPoint
-      Topic: /clicked_point
-
+      Single click: true
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /clicked_point
+  Transformation:
+    Current:
+      Class: rviz_default_plugins/TF
+  Value: true
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      # Follow the Fixed Frame (= map) instead of base_link. base_link only
-      # appears in the TF tree once the EKF publishes odom->base_link a few
-      # seconds after startup; an Orbit view targeting it before that point
-      # raises tf2::InvalidArgumentException in the render thread, which is
-      # uncaught on Foxy and aborts RViz with SIGABRT.
-      Target Frame: <Fixed Frame>
       Distance: 10
+      Enable Stereo Rendering:
+        Stereo Eye Separation: 0.05999999865889549
+        Stereo Focal Distance: 1
+        Swap Stereo Eyes: false
+        Value: false
+      Focal Point:
+        X: 0
+        Y: 0
+        Z: 0
+      Focal Shape Fixed Size: true
+      Focal Shape Size: 0.05
+      Invert Z Axis: false
+      Name: Current View
+      Near Clip Distance: 0.009999999776482582
       Pitch: 0.5
+      Target Frame: <Fixed Frame>
+      Value: Orbit (rviz)
       Yaw: 0.5
-
-  Value: true
-
+    Saved: ~
 Window Geometry:
   Displays:
     collapsed: false
