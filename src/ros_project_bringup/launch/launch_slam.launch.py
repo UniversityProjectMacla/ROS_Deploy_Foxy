@@ -40,6 +40,7 @@ from launch.actions import (
     DeclareLaunchArgument,
     IncludeLaunchDescription,
     OpaqueFunction,
+    SetEnvironmentVariable,
     TimerAction,
 )
 from launch.launch_description_sources import PythonLaunchDescriptionSource
@@ -222,6 +223,24 @@ def launch_setup(context, *args, **kwargs):
     _vis_perc_arg = LaunchConfiguration('visualise_perception').perform(context).strip().lower()
     if _vis_perc_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
         U['visualise_perception'] = _vis_perc_arg in ('true', '1', 'yes', 'on')
+
+    pre_actions = []
+    _disable_shm_arg = LaunchConfiguration('disable_dds_shm').perform(context).strip().lower()
+    if _disable_shm_arg in ('true', '1', 'yes', 'on'):
+        # Workaround for the Foxy FastDDS + Livox publisher stall (multiple high-payload
+        # subscribers fill the publisher's SHM segment and block sending). Pointing every
+        # child process at this profile forces UDPv4-only transport; kernel loopback then
+        # absorbs the per-subscriber backlog instead. NOTE: only affects nodes launched by
+        # this file. The Livox driver must be started with the same env in its own shell
+        # (export FASTRTPS_DEFAULT_PROFILES_FILE=<this path>) for the fix to be complete.
+        profile_path = os.path.join(
+            get_package_share_directory('ros_project_bringup'),
+            'config',
+            'fastdds_no_shm.xml',
+        )
+        pre_actions.append(
+            SetEnvironmentVariable('FASTRTPS_DEFAULT_PROFILES_FILE', profile_path)
+        )
 
     ust = LaunchConfiguration('use_sim_time').perform(context).strip().lower()
     use_sim_time = ust not in ('false', '0', 'no', 'off')
@@ -772,6 +791,8 @@ def launch_setup(context, *args, **kwargs):
         )
         actions.append(rviz_node)
 
+    actions = pre_actions + actions
+
     if bool(U.get('visualise_perception', False)):
         # Second rviz2 dedicated to a single perception debug image. Unique node name
         # so DDS / ros2 node list does not see two ``/rviz2`` collisions.
@@ -848,6 +869,18 @@ def generate_launch_description():
                 'perception debug image (default topic /perception/visualisation, '
                 'overridable in slam_bringup.yaml). Empty = use YAML value '
                 '(visualise_perception, default false).'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'disable_dds_shm',
+            default_value='false',
+            description=(
+                'Workaround for the Foxy FastDDS publisher stall on /livox/lidar '
+                'when multiple SLAM subscribers attach. When true, every node started '
+                'by this launch file is configured (via FASTRTPS_DEFAULT_PROFILES_FILE) '
+                'to use UDPv4-only transport instead of shared memory. The Livox driver '
+                'must be started with the same env in its own shell for the fix to be '
+                'complete; see docs/dds_transport.md.'
             ),
         ),
         DeclareLaunchArgument(

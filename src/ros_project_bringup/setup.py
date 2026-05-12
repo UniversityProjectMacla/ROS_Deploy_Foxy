@@ -16,6 +16,7 @@ setup(
             glob('launch/*.launch.py')),
         (os.path.join('share', package_name, 'docs'), glob('docs/*.md')),
         (os.path.join('share', package_name, 'config'), glob('config/*.yaml')),
+        (os.path.join('share', package_name, 'config'), glob('config/*.xml')),
         (os.path.join('share', package_name, 'rviz'), glob('rviz/*.rviz')),
         # launch_ros Node() resolves executables under lib/<pkg>/; setuptools puts the real script in bin/.
         (

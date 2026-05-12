@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    FastDDS profile that forces UDPv4 only (no shared-memory transport).
+
+    Why: Foxy + FastDDS + a Livox MID-360 driver + multiple high-payload
+    subscribers (fastlio_mapping, keyframe_map_node, ekf_node) reliably
+    stalls the /livox/lidar publisher within seconds of SLAM launch and
+    recovers ~5 s after the last subscriber unmatches. Root cause is the
+    SHM transport's per-publisher segment filling faster than it drains
+    when SLAM nodes spike CPU during ikd-tree init / first prefilter,
+    blocking the publisher.
+
+    Disabling SHM forces FastDDS to use UDP loopback for local IPC, which
+    buffers per-receiver via the kernel and never backs up the publisher.
+    A few extra MB/s of localhost UDP is negligible vs the alternative.
+
+    Activate either via launch arg:
+        ros2 launch ros_project_bringup launch_slam.launch.py disable_dds_shm:=true
+    or by exporting once and starting the Livox driver + SLAM in that
+    shell:
+        export FASTRTPS_DEFAULT_PROFILES_FILE=$(ros2 pkg prefix \
+            ros_project_bringup)/share/ros_project_bringup/config/fastdds_no_shm.xml
+-->
+<profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles">
+    <transport_descriptors>
+        <transport_descriptor>
+            <transport_id>udpv4_only</transport_id>
+            <type>UDPv4</type>
+        </transport_descriptor>
+    </transport_descriptors>
+
+    <participant profile_name="participant_no_shm" is_default_profile="true">
+        <rtps>
+            <userTransports>
+                <transport_id>udpv4_only</transport_id>
+            </userTransports>
+            <useBuiltinTransports>false</useBuiltinTransports>
+        </rtps>
+    </participant>
+</profiles>
