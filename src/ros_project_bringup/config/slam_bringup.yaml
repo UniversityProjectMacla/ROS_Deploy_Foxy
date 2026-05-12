@@ -266,8 +266,12 @@ slam_bringup:
   lio_overlay_params_file: config/fastlio_mid360_overlay.yaml
   lio_bag_overlay_params_file: config/fastlio_bag_replay_overlay.yaml
   lio_auto_tf_bridge: true
-  # When the FAST-LIO auto bridge runs, also publish an identity ``body -> base_link`` static TF so
-  # the FAST-LIO branch (``odom -> camera_init -> body``) joins the robot branch (``odom -> base_link``).
-  # Without this, ``body`` and ``base_link`` are disjoint frames and downstream tools cannot
-  # resolve sensor frames through the FAST-LIO chain.
-  lio_auto_tf_bridge_body_to_base_link: true
+  # DO NOT enable in normal operation. Publishing identity ``body -> base_link`` gives
+  # ``base_link`` a SECOND parent (the EKF already publishes ``odom -> base_link``
+  # dynamic /tf), and tf2 silently rejects the new edge -- the static then shows up as
+  # an unattached ``body`` frame in RViz with ``No transform from [body] to [map]``.
+  # The relay node already exports the same FAST-LIO pose on /lidar/odom in
+  # ``odom -> base_link``, so the FAST-LIO ``body`` frame can stay an internal subtree
+  # under ``camera_init``; nothing downstream needs ``body`` resolved against ``map``.
+  # Leave this at false. The toggle is kept only for experimentation.
+  lio_auto_tf_bridge_body_to_base_link: false

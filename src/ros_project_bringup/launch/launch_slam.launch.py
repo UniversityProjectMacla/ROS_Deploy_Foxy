@@ -584,13 +584,13 @@ def launch_setup(context, *args, **kwargs):
             )
         )
         if use_lio and bool(U.get('lio_auto_tf_bridge', True)):
-            # ``odom -> camera_init`` keeps FAST-LIO's world tied to the robot ``odom`` frame; pairing
-            # it with an identity ``body -> base_link`` connects the FAST-LIO branch to the EKF /
-            # robot branch so consumers (RViz, message_filters) can resolve ``livox_frame`` against
-            # ``base_link`` through either chain. Without the body bridge the two chains stay
-            # disjoint and the keyframe / RViz TF lookups race against the EKF startup.
+            # Only publish the ``odom -> camera_init`` static. Do NOT add identity
+            # ``body -> base_link`` by default -- ``base_link`` already has ``odom`` as its
+            # tf2 parent via the EKF /tf, and publishing a second parent makes tf2 silently
+            # reject the static, leaving ``body`` shown as an unattached frame in RViz
+            # ("No transform from [body] to [map]"). Toggle exists for experimentation only.
             _bridge_body_to_base = str(
-                U.get('lio_auto_tf_bridge_body_to_base_link', True)
+                U.get('lio_auto_tf_bridge_body_to_base_link', False)
             ).strip().lower() in ('true', '1', 'yes', 'on')
             actions.append(
                 IncludeLaunchDescription(
