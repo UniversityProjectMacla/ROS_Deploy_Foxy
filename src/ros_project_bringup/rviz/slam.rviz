@@ -100,7 +100,12 @@ Visualization Manager:
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: Intensity
+      # IMPORTANT (Foxy): keyframe_map_node drops the ``intensity`` PointField on every
+      # pose-graph rebuild (per-keyframe-index intensity gets cleared). Foxy rviz2's
+      # PointCloud2 display SIGSEGVs when its configured Color Transformer references a
+      # field the incoming cloud lacks. ``AxisColor`` (height-coded along Z) is safe
+      # because it only needs xyz, which the publisher always emits.
+      Color Transformer: AxisColor
       Decay Time: 0
       Enabled: true
       Invert Rainbow: false

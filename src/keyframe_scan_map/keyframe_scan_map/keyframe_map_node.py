@@ -414,29 +414,30 @@ def numpy_xyz_to_pointcloud2(
         xyz = np.ascontiguousarray(points[:, :3], dtype=np.float32)
     else:
         xyz = np.zeros((0, 3), dtype=np.float32)
-    if intensity is not None and n > 0:
+    # Always emit an ``intensity`` field. Foxy rviz2's PointCloud2 display SIGSEGVs (exit -11)
+    # when its configured Color Transformer references a field that an incoming cloud lacks,
+    # and this publisher previously dropped ``intensity`` whenever ``self._map_intensity`` was
+    # cleared (pose-graph rebuild). Zero-filling is cheap and lets any downstream consumer
+    # rely on a stable schema.
+    msg.fields = [
+        PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
+        PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
+        PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
+        PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
+    ]
+    msg.point_step = 16
+    msg.row_step = msg.point_step * n
+    if n == 0:
+        msg.data = b''
+        return msg
+    if intensity is not None:
         inte = np.asarray(intensity, dtype=np.float32).reshape(-1)
         if inte.shape[0] != n:
             inte = xyz[:, 2].copy()
-        msg.fields = [
-            PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
-            PointField(name='intensity', offset=12, datatype=PointField.FLOAT32, count=1),
-        ]
-        msg.point_step = 16
-        msg.row_step = msg.point_step * n
-        blk = np.hstack([xyz, inte.reshape(-1, 1)])
-        msg.data = np.ascontiguousarray(blk, dtype=np.float32).tobytes()
     else:
-        msg.fields = [
-            PointField(name='x', offset=0, datatype=PointField.FLOAT32, count=1),
-            PointField(name='y', offset=4, datatype=PointField.FLOAT32, count=1),
-            PointField(name='z', offset=8, datatype=PointField.FLOAT32, count=1),
-        ]
-        msg.point_step = 12
-        msg.row_step = msg.point_step * n
-        msg.data = xyz.tobytes() if n > 0 else b''
+        inte = np.zeros((n,), dtype=np.float32)
+    blk = np.hstack([xyz, inte.reshape(-1, 1)])
+    msg.data = np.ascontiguousarray(blk, dtype=np.float32).tobytes()
     return msg
 
 
