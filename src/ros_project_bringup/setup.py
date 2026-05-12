@@ -22,6 +22,7 @@ setup(
         (
             os.path.join('lib', package_name),
             [
+                'ros_project_bringup/wrappers/cloud_lan_bridge',
                 'ros_project_bringup/wrappers/lidar_odom_ema_smooth',
                 'ros_project_bringup/wrappers/ndt_ekf_time_diagnose',
                 'ros_project_bringup/wrappers/pipeline_translation_debug',
@@ -36,6 +37,7 @@ setup(
     license='TODO: License declaration',
     entry_points={
         'console_scripts': [
+            'cloud_lan_bridge = ros_project_bringup.cloud_lan_bridge:main',
             'lidar_odom_ema_smooth = ros_project_bringup.lidar_odom_ema_smooth:main',
             'ndt_ekf_time_diagnose = ros_project_bringup.ndt_ekf_time_diagnose:main',
             'pipeline_translation_debug = ros_project_bringup.pipeline_translation_debug:main',

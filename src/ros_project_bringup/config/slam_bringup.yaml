@@ -112,6 +112,32 @@ slam_bringup:
   imu_mount_yaw_deg: 0.0
 
   # ===========================================================================
+  # LAN cloud bridge (network multicast workaround)
+  # ===========================================================================
+  # When the robot publishes /livox/lidar over a bandwidth-limited link
+  # (Wi-Fi / hotspot) and DDS multicast is blocked on that network, the
+  # publisher unicasts a copy per SLAM subscriber (FAST-LIO, keyframe_map,
+  # EKF cloud-stamp). With three SLAM subs the link saturates and the
+  # cloud collapses to <1 Hz. Setting ``cloud_lan_bridge: true`` starts
+  # a local relay node on the PC that subscribes once and republishes on
+  # ``cloud_lan_bridge_out_topic``; the launch then rewires every SLAM
+  # consumer (lidar_cloud_topic / keyframe_cloud_topic / FAST-LIO
+  # common.lid_topic) to the relayed topic so the over-wire copy count
+  # is fixed at 1 regardless of subscriber count.
+  # See docs/network_bandwidth.md.
+  cloud_lan_bridge: false
+  cloud_lan_bridge_in_topic: /livox/lidar
+  cloud_lan_bridge_out_topic: /livox/lidar/local
+  cloud_lan_bridge_depth: 5
+  # Optionally also relay the IMU. The IMU stream is tiny (~0.3 Mbps) and
+  # almost never the bandwidth offender, so default off; flip on if you
+  # also see /livox/imu rate collapsing with SLAM up.
+  cloud_lan_bridge_imu_enable: false
+  cloud_lan_bridge_imu_in_topic: /livox/imu
+  cloud_lan_bridge_imu_out_topic: /livox/imu/local
+  cloud_lan_bridge_imu_depth: 50
+
+  # ===========================================================================
   # Topics
   # ===========================================================================
   lidar_cloud_topic: /livox/lidar

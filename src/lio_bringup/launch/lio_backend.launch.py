@@ -33,6 +33,8 @@ def _lio_backend_setup(context, *args, **kwargs):
     relay_tf_raw = LaunchConfiguration('lio_relay_publish_tf').perform(context).strip().lower()
     relay_publish_tf = relay_tf_raw in ('true', '1', 'yes', 'on')
     sync_cloud = LaunchConfiguration('lio_relay_sync_tf_cloud_topic').perform(context).strip()
+    lid_override = LaunchConfiguration('lio_lid_topic_override').perform(context).strip()
+    imu_override = LaunchConfiguration('lio_imu_topic_override').perform(context).strip()
 
     p_fastlio = os.path.join(get_package_share_directory('fast_lio'), fastlio_rel)
     p_overlay = os.path.join(get_package_share_directory('lio_bringup'), overlay_rel)
@@ -44,6 +46,13 @@ def _lio_backend_setup(context, *args, **kwargs):
                 bag_rel.lstrip('/'),
             )
         )
+    # ``common.lid_topic`` and ``common.imu_topic`` are baked into mid360.yaml and the
+    # fastlio overlay; appending a small last-wins dict lets launch_slam point FAST-LIO
+    # at a relayed topic (cloud_lan_bridge) without rewriting the YAMLs.
+    if lid_override:
+        plist.append({'common.lid_topic': lid_override})
+    if imu_override:
+        plist.append({'common.imu_topic': imu_override})
     plist.append({'use_sim_time': use_sim})
 
     relay_params: dict = {'use_sim_time': use_sim, 'publish_tf': relay_publish_tf}
@@ -108,6 +117,23 @@ def generate_launch_description():
                 description=(
                     'If non-empty and publish_tf true, also publish odom->base_link TF at each '
                     'point cloud stamp (e.g. /livox/lidar) using last LIO pose.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'lio_lid_topic_override',
+                default_value='',
+                description=(
+                    'If non-empty, override fastlio common.lid_topic. Used by launch_slam '
+                    'when cloud_lan_bridge is on so FAST-LIO consumes the locally-relayed '
+                    'cloud instead of the remote /livox/lidar directly.'
+                ),
+            ),
+            DeclareLaunchArgument(
+                'lio_imu_topic_override',
+                default_value='',
+                description=(
+                    'If non-empty, override fastlio common.imu_topic. Same use case as '
+                    'lio_lid_topic_override but for the IMU subscription.'
                 ),
             ),
             OpaqueFunction(function=_lio_backend_setup),

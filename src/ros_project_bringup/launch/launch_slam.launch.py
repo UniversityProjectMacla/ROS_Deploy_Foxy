@@ -224,7 +224,70 @@ def launch_setup(context, *args, **kwargs):
     if _vis_perc_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
         U['visualise_perception'] = _vis_perc_arg in ('true', '1', 'yes', 'on')
 
+    _bridge_arg = LaunchConfiguration('cloud_lan_bridge').perform(context).strip().lower()
+    if _bridge_arg not in ('', 'auto', 'use_yaml', '__yaml__'):
+        U['cloud_lan_bridge'] = _bridge_arg in ('true', '1', 'yes', 'on')
+    cloud_lan_bridge_enable = bool(U.get('cloud_lan_bridge', False))
+    cloud_bridge_in = str(U.get('cloud_lan_bridge_in_topic', '/livox/lidar')).strip() or '/livox/lidar'
+    cloud_bridge_out = str(U.get('cloud_lan_bridge_out_topic', '/livox/lidar/local')).strip() or '/livox/lidar/local'
+    cloud_bridge_depth = int(U.get('cloud_lan_bridge_depth', 5) or 5)
+    cloud_bridge_imu_enable = bool(U.get('cloud_lan_bridge_imu_enable', False))
+    cloud_bridge_imu_in = str(U.get('cloud_lan_bridge_imu_in_topic', '/livox/imu')).strip() or ''
+    cloud_bridge_imu_out = str(U.get('cloud_lan_bridge_imu_out_topic', '/livox/imu/local')).strip() or ''
+    cloud_bridge_imu_depth = int(U.get('cloud_lan_bridge_imu_depth', 50) or 50)
+
+    # When the bridge is on, rewire every cloud (and optionally IMU) consumer to the relayed
+    # topic so the over-wire copy count from a remote Livox driver is fixed at 1 regardless of
+    # how many local SLAM subscribers attach. See docs/network_bandwidth.md.
+    if cloud_lan_bridge_enable:
+        if cloud_bridge_in == cloud_bridge_out:
+            raise RuntimeError(
+                'cloud_lan_bridge: cloud_lan_bridge_in_topic and '
+                'cloud_lan_bridge_out_topic must differ when bridge is enabled '
+                f'(both are {cloud_bridge_in!r})'
+            )
+        original_cloud = cloud_bridge_in
+        for key in ('lidar_cloud_topic', 'keyframe_cloud_topic'):
+            cur = str(U.get(key, '') or '').strip()
+            if cur == original_cloud:
+                U[key] = cloud_bridge_out
+        # ``lio_relay_sync_tf_cloud_topic`` is resolved below; its auto-fallback reads from
+        # ``U['keyframe_cloud_topic']`` so the rewrite above already feeds it the relayed
+        # topic. An explicit (non-auto) value matching the wire topic is rewritten here.
+        explicit_sync_topic = str(U.get('lio_relay_sync_tf_cloud_topic', '') or '').strip()
+        if explicit_sync_topic == original_cloud:
+            U['lio_relay_sync_tf_cloud_topic'] = cloud_bridge_out
+        if cloud_bridge_imu_enable and cloud_bridge_imu_in and cloud_bridge_imu_out:
+            if cloud_bridge_imu_in == cloud_bridge_imu_out:
+                raise RuntimeError(
+                    'cloud_lan_bridge: imu in/out topics must differ when imu relay is on '
+                    f'(both are {cloud_bridge_imu_in!r})'
+                )
+            for key in ('ekf_imu_topic', 'keyframe_deskew_imu_topic'):
+                cur = str(U.get(key, '') or '').strip()
+                if cur == cloud_bridge_imu_in:
+                    U[key] = cloud_bridge_imu_out
+
     pre_actions = []
+    if cloud_lan_bridge_enable:
+        bridge_params = {
+            'in_topic': cloud_bridge_in,
+            'out_topic': cloud_bridge_out,
+            'depth': cloud_bridge_depth,
+        }
+        if cloud_bridge_imu_enable and cloud_bridge_imu_in and cloud_bridge_imu_out:
+            bridge_params['imu_in_topic'] = cloud_bridge_imu_in
+            bridge_params['imu_out_topic'] = cloud_bridge_imu_out
+            bridge_params['imu_depth'] = cloud_bridge_imu_depth
+        pre_actions.append(
+            Node(
+                package='ros_project_bringup',
+                executable='cloud_lan_bridge',
+                name='cloud_lan_bridge',
+                output='screen',
+                parameters=[bridge_params],
+            )
+        )
     _disable_shm_arg = LaunchConfiguration('disable_dds_shm').perform(context).strip().lower()
     if _disable_shm_arg in ('true', '1', 'yes', 'on'):
         # Workaround for the Foxy FastDDS + Livox publisher stall (multiple high-payload
@@ -599,6 +662,27 @@ def launch_setup(context, *args, **kwargs):
                     ('lio_bag_overlay_params_file', TextSubstitution(text=_lio_bag_overlay)),
                     ('lio_relay_publish_tf', 'true' if lio_relay_publish_tf else 'false'),
                     ('lio_relay_sync_tf_cloud_topic', TextSubstitution(text=lio_relay_sync_tf_cloud_topic)),
+                    (
+                        'lio_lid_topic_override',
+                        TextSubstitution(
+                            text=cloud_bridge_out if cloud_lan_bridge_enable else ''
+                        ),
+                    ),
+                    (
+                        'lio_imu_topic_override',
+                        TextSubstitution(
+                            text=(
+                                cloud_bridge_imu_out
+                                if (
+                                    cloud_lan_bridge_enable
+                                    and cloud_bridge_imu_enable
+                                    and cloud_bridge_imu_in
+                                    and cloud_bridge_imu_out
+                                )
+                                else ''
+                            )
+                        ),
+                    ),
                 ],
             )
         )
@@ -869,6 +953,18 @@ def generate_launch_description():
                 'perception debug image (default topic /perception/visualisation, '
                 'overridable in slam_bringup.yaml). Empty = use YAML value '
                 '(visualise_perception, default false).'
+            ),
+        ),
+        DeclareLaunchArgument(
+            'cloud_lan_bridge',
+            default_value='',
+            description=(
+                'When true, start a local PointCloud2 relay node (and optionally an IMU '
+                'relay) and rewire FAST-LIO / keyframe_map / EKF cloud-stamp to subscribe '
+                'to the relayed topic. Fixes the per-subscriber unicast multiplication '
+                'over bandwidth-limited Wi-Fi / mobile-hotspot links that lack DDS '
+                'multicast support. Empty = use YAML value '
+                '(cloud_lan_bridge, default false). See docs/network_bandwidth.md.'
             ),
         ),
         DeclareLaunchArgument(
